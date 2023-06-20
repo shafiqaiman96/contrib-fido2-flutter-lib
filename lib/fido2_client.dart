@@ -45,7 +45,7 @@ class Fido2Client {
         Map args = call.arguments;
         String errorName = args['errorName'];
         String errorMsg = args['errorMsg'];
-        _signCompleter.completeError(AuthenticatorError(errorName, errorMsg));
+        _regCompleter.completeError(AuthenticatorError(errorName, errorMsg));
         break;
       case 'onSignAuthError':
         Map args = call.arguments;
@@ -83,14 +83,24 @@ class Fido2Client {
   ///
   /// The method returns a [RegistrationResult] future that is completed after the
   /// user completes the authentication process.
-  Future<RegistrationResult> initiateRegistration(
-    String challenge,
-    String userId,
-    Map<String, dynamic> options,
-  ) async {
-    Map<String, dynamic> args = options;
-    args.putIfAbsent('challenge', () => challenge);
-    args.putIfAbsent('userId', () => userId);
+  Future<RegistrationResult> initiateRegistration({
+    required String challenge,
+    required String userId,
+    required String username,
+    required String rpDomain,
+    required String rpName,
+    required String coseAlgoValue,
+    String? excludedCredentials,
+  }) async {
+    Map<String, dynamic> args = {
+      'challenge': challenge,
+      'userId': userId,
+      'username': username,
+      'rpDomain': rpDomain,
+      'rpName': rpName,
+      'coseAlgoValue': coseAlgoValue,
+      'excludeCredentials': excludedCredentials
+    };
     _channel.invokeMethod('initiateRegistration', args);
     return _regCompleter.future;
   }
