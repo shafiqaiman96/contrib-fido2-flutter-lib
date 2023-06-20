@@ -132,13 +132,13 @@ public class Fido2ClientPlugin : FlutterPlugin, MethodCallHandler, ActivityAware
             .setRp(rpEntity)
             .setUser(
                 PublicKeyCredentialUserEntity(
-                    userId.decodeBase64(),
+                    userId.toByteArray(),
                     userId,
                     null,
                     username
                 )
             )
-            .setChallenge(challenge.decodeBase64())
+            .setChallenge(challenge.toByteArray())
             .setParameters(
                 coseAlgoValue.map {
                     PublicKeyCredentialParameters(
@@ -151,7 +151,7 @@ public class Fido2ClientPlugin : FlutterPlugin, MethodCallHandler, ActivityAware
                 excludeCredentials.map {
                     PublicKeyCredentialDescriptor(
                         PublicKeyCredentialType.PUBLIC_KEY.toString(),
-                        it.decodeBase64(),
+                        it.toByteArray(),
                         null
                     )
                 }
@@ -197,12 +197,12 @@ public class Fido2ClientPlugin : FlutterPlugin, MethodCallHandler, ActivityAware
                 keyHandleBase64.map {
                     PublicKeyCredentialDescriptor(
                         PublicKeyCredentialType.PUBLIC_KEY.toString(),
-                        it.decodeBase64(),
+                        it.toByteArray(),
                         null
                     )
                 }
             )
-            .setChallenge(challenge.decodeBase64())
+            .setChallenge(challenge.toByteArray())
             .build()
 
         val fidoClient = Fido.getFido2ApiClient(activity)
@@ -252,43 +252,35 @@ public class Fido2ClientPlugin : FlutterPlugin, MethodCallHandler, ActivityAware
                 val errorMessage =
                     "The authentication process was interrupted before the user could complete verification."
 
-                val args = HashMap<String, String>()
-                args["errorName"] = errorName
-                args["errorMsg"] = errorMessage
-
-                when (requestCode) {
-                    REGISTER_REQUEST_CODE -> channel.invokeMethod("onRegAuthError", args)
-                    SIGN_REQUEST_CODE -> channel.invokeMethod("onSignAuthError", args)
-                }
+                sendError(requestCode, errorName, errorMessage);
             }
 
             else -> {
                 val errorName = "FIDO_PROCESS_INTERRUPTED"
                 val errorMessage = "Unhandled result code"
 
-                val args = HashMap<String, String>()
-                args["errorName"] = errorName
-                args["errorMsg"] = errorMessage
-
-                when (requestCode) {
-                    REGISTER_REQUEST_CODE -> channel.invokeMethod("onRegAuthError", args)
-                    SIGN_REQUEST_CODE -> channel.invokeMethod("onSignAuthError", args)
-                }
+                sendError(requestCode, errorName, errorMessage);
             }
         }
         return true
+    }
+
+    private fun sendError(requestCode: Int, errorName: String, errorMessage: String) {
+        val args = HashMap<String, String>()
+        args["errorName"] = errorName
+        args["errorMsg"] = errorMessage
+
+        when (requestCode) {
+            REGISTER_REQUEST_CODE -> channel.invokeMethod("onRegAuthError", args)
+            SIGN_REQUEST_CODE -> channel.invokeMethod("onSignAuthError", args)
+        }
     }
 
     private fun handleErrorResponse(requestCode: Int, errorBytes: ByteArray) {
         val authenticatorErrorResponse = AuthenticatorErrorResponse.deserializeFromBytes(errorBytes)
         val errorName = authenticatorErrorResponse.errorCode.name
         val errorMessage = authenticatorErrorResponse.errorMessage ?: ""
-
-        val args = HashMap<String, String>()
-        args["errorName"] = errorName
-        args["errorMsg"] = errorMessage
-
-        channel.invokeMethod("onAuthError", args)
+        sendError(requestCode, errorName, errorMessage);
     }
 
 
