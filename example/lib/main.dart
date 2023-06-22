@@ -16,7 +16,7 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> {
-  String keyHandle; // Should be saved in shared pref
+  String? keyHandle; // Should be saved in shared pref
   static const String regChallenge =
       "randomchallenge1231321"; // Should come from server
   static const String signChallenge =
@@ -63,14 +63,13 @@ class _MyAppState extends State<MyApp> {
     return ElevatedButton(
       child: Text('FIDO Register'),
       onPressed: () async {
-        Map<String, dynamic> options = {
-          'username': 'kkzeng',
-          'rpDomain': rpDomain,
-          'rpName': rpName,
-          'coseAlgoValue': "-7"
-        };
         RegistrationResult res = await fidoClient.initiateRegistration(
-            regChallenge, "kenkaizeng@gmail.com", options);
+            challenge: regChallenge,
+            userId: "kenkaizeng@gmail.com",
+            username: 'kkzeng',
+            rpDomain: rpDomain,
+            rpName: rpName,
+            coseAlgoValue: '-7');
         setState(() {
           this.keyHandle = res.keyHandle;
 
@@ -93,7 +92,7 @@ class _MyAppState extends State<MyApp> {
           ? null
           : () async {
               SigningResult res = await fidoClient.initiateSigning(
-                  keyHandle, signChallenge,
+                  keyHandle!, signChallenge,
                   rpDomain: rpDomain);
               setState(() {
                 // Decoding the clientData to be JSON so that it is human readable
